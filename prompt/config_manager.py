@@ -1,5 +1,7 @@
-from .util import pbh_get_config_file_path
-from .log_helper import pbh_log_exception
+import os.path
+
+from .util import pbh_get_config_file_path, pbh_get_source_dir
+from .log_helper import pbh_log_exception, pbh_log_console
 from .models.config import Config
 import json
 
@@ -13,7 +15,12 @@ def pbh_jsonDecoder(dict):
 class ConfigManager:
     def __pbh_get_config_from_disk(self) -> Config | None:
         try:
-            with open(pbh_get_config_file_path(), 'r') as f:
+            path = pbh_get_config_file_path()
+            #default to sample if no config is given
+            if path is None:
+                pbh_log_console("Loading sample config")
+                path = pbh_get_source_dir() + "/sample_config.json"
+            with open(path, 'r') as f:
                 obj = json.load(f, object_hook=pbh_jsonDecoder)
                 r: Config = obj
                 return r
