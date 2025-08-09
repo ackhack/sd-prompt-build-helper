@@ -8,13 +8,12 @@ class FinalPromptBuilder:
         if not prompt.active:
             return
         self.pbh_add_string(prompt.prompt)
-        if hasattr(prompt, "loras"):
-            for lora in prompt.loras:
-                if lora.base_model_type == base_model:
-                    self.pbh_add_string(lora.name)
+        for lora in prompt.loras:
+            if lora.base_model_type == base_model:
+                self.pbh_add_string(lora.name)
 
     def pbh_add_string(self, content: str | None):
-        if content is None:
+        if content is None or len(content) == 0:
             return
         content = content.strip()
         if not content.endswith(","):

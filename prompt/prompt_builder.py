@@ -1,7 +1,8 @@
 from .config_manager import pbh_get_config_manager, ConfigManager
 from .models.config import Config
+from .models.prompt_model import PromptModel
 from .final_prompt_builder import FinalPromptBuilder
-from random import randint, sample
+from random import randint, choices
 
 
 class PromptBuilder:
@@ -41,15 +42,26 @@ class PromptBuilder:
                 n_mdl = randint(min_mdl, max_mdl)
 
                 # Get all active prompts and if there are more prompts then we need we randomly pick some of them
-                active_prompts = [p for p in category.prompts if p.active]
-                if n_mdl < len(active_prompts):
-                    active_prompts = sample([p for p in category.prompts if p.active], n_mdl)
+                active_prompts = self.__get_random_prompts_from_list([p for p in category.prompts if p.active], n_mdl)
 
                 # Add them to final prompt
                 for prompt in active_prompts:
                     final_prompt.pbh_add_prompt(prompt, config.base_model)
 
         return final_prompt.pbh_get()
+
+    def __get_random_prompts_from_list(self, prompts: list[PromptModel], count: int) -> list[PromptModel]:
+        if count >= len(prompts):
+            return prompts
+
+        res: list[PromptModel] = []
+        while count > 0:
+            weights = list(map(lambda p: p.weight, prompts))
+            index = choices(range(len(weights)), weights=weights, k=1)[0]
+            res.append(prompts[index])
+            prompts.remove(prompts[index])
+            count -= 1
+        return res
 
 
 instance = PromptBuilder()

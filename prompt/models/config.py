@@ -1,6 +1,8 @@
 from .prompt_category import PromptCategory
+from dataclasses import dataclass
 
 #Represents the whole config of the extension
+@dataclass
 class Config:
     #If the prompt should be overwritten
     active: bool

@@ -1,8 +1,10 @@
 from .prompt_model import PromptModel
 from .category_randomization import CategoryRandomization
+from dataclasses import dataclass
 
 
 # Represents a category containing prompts
+@dataclass
 class PromptCategory:
     # Name of the category
     name: str
