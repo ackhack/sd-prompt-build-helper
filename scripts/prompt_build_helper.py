@@ -1,0 +1,4 @@
+from modules.script_callbacks import on_before_process
+from prompt.callbacks import pbh_before_process
+
+on_before_process(pbh_before_process)
