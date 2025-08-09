@@ -145,11 +145,13 @@ A simple example below:
             {
                 "name": "Kitchen",
                 "active":true,
+                "weight": 2,
                 "prompt": "kitchen, inside,"
             },
             {
                 "name": "Park",
                 "active":true,
+                "weight": 1,
                 "prompt": "outside, trees, park,"
             }
         ]
