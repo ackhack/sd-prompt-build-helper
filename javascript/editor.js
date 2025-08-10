@@ -63,8 +63,8 @@ class PromptModel {
     name = "";
     prompt = "";
     active = true;
-    loras = [];
     weight = 1;
+    loras = [];
 }
 
 class LoraDef {
@@ -196,6 +196,51 @@ class ConfigEditor {
     }
 
     renderArray(obj, key, container) {
+        const {wrapper, header, toggleBtn, content} = this.createHtmlContent(key);
+
+        // Add button is outside content, so won't be removed during re-rendering items
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "Add " + key.slice(0, -1);
+        this.applyStyles(addBtn, {marginTop: "8px", cursor: "pointer"});
+        wrapper.appendChild(addBtn);
+
+        // Initialize toggle state
+        this.setupToggling(obj[key], content, toggleBtn, header);
+
+        // Render initial items
+        this.renderArrayItems(obj[key], content);
+
+        addBtn.onclick = () => {
+            const ctor = this.getArrayItemConstructor(obj, key);
+            obj[key].push(new ctor());
+            this.renderArrayItems(obj[key], content);
+        };
+
+        container.appendChild(wrapper);
+    }
+
+    setupToggling(item, content, toggleBtn, header) {
+        if (!this.toggleState.has(item))
+            this.toggleState.set(item, false);
+        const isOpen = this.toggleState.get(item);
+        content.style.display = isOpen ? "" : "none";
+        toggleBtn.textContent = isOpen ? "▼" : "▶";
+
+        toggleBtn.onclick = () => {
+            const current = this.toggleState.get(item);
+            this.toggleState.set(item, !current);
+            toggleBtn.textContent = !current ? "▼" : "▶";
+            content.style.display = !current ? "" : "none";
+        };
+        header.onclick = () => {
+            const current = this.toggleState.get(item);
+            this.toggleState.set(item, !current);
+            toggleBtn.textContent = !current ? "▼" : "▶";
+            content.style.display = !current ? "" : "none";
+        };
+    }
+
+    createHtmlContent(key) {
         const wrapper = document.createElement("div");
         this.applyStyles(wrapper, {
             border: "1px solid #ccc",
@@ -224,43 +269,7 @@ class ConfigEditor {
         // Content div contains *only* the array items (no add button)
         const content = document.createElement("div");
         wrapper.appendChild(content);
-
-        // Add button is outside content, so won't be removed during re-rendering items
-        const addBtn = document.createElement("button");
-        addBtn.textContent = "Add " + key.slice(0, -1);
-        this.applyStyles(addBtn, {marginTop: "8px", cursor: "pointer"});
-        wrapper.appendChild(addBtn);
-
-        // Initialize toggle state
-        if (!this.toggleState.has(obj[key]))
-            this.toggleState.set(obj[key], false);
-        const isOpen = this.toggleState.get(obj[key]);
-        content.style.display = isOpen ? "" : "none";
-        toggleBtn.textContent = isOpen ? "▼" : "▶";
-
-        toggleBtn.onclick = () => {
-            const current = this.toggleState.get(obj[key]);
-            this.toggleState.set(obj[key], !current);
-            toggleBtn.textContent = !current ? "▼" : "▶";
-            content.style.display = !current ? "" : "none";
-        };
-        header.onclick = () => {
-            const current = this.toggleState.get(obj[key]);
-            this.toggleState.set(obj[key], !current);
-            toggleBtn.textContent = !current ? "▼" : "▶";
-            content.style.display = !current ? "" : "none";
-        };
-
-        // Render initial items
-        this.renderArrayItems(obj[key], content);
-
-        addBtn.onclick = () => {
-            const ctor = this.getArrayItemConstructor(obj, key);
-            obj[key].push(new ctor());
-            this.renderArrayItems(obj[key], content);
-        };
-
-        container.appendChild(wrapper);
+        return {wrapper, header, toggleBtn, content};
     }
 
     renderArrayItems(array, container) {
@@ -290,7 +299,6 @@ class ConfigEditor {
             const title = document.createElement("span");
             title.textContent = titleText;
             this.applyStyles(title, {flexGrow: 1});
-            header.appendChild(title);
 
             wrapper.appendChild(header);
 
@@ -300,29 +308,11 @@ class ConfigEditor {
 
             //only add toggling content if item is object
             if (typeof item === "object") {
-                // Track toggle state per item object
-                if (typeof item === "object" && !this.toggleState.has(item))
-                    this.toggleState.set(item, false);
-                const isOpen = this.toggleState.get(item);
-                content.style.display = isOpen ? "" : "none";
-
                 const toggleBtn = this.createToggleButton(true);
                 header.appendChild(toggleBtn);
-                toggleBtn.textContent = isOpen ? "▼" : "▶";
-
-                toggleBtn.onclick = () => {
-                    const current = this.toggleState.get(item);
-                    this.toggleState.set(item, !current);
-                    toggleBtn.textContent = !current ? "▼" : "▶";
-                    content.style.display = !current ? "" : "none";
-                };
-                header.onclick = () => {
-                    const current = this.toggleState.get(item);
-                    this.toggleState.set(item, !current);
-                    toggleBtn.textContent = !current ? "▼" : "▶";
-                    content.style.display = !current ? "" : "none";
-                };
+                this.setupToggling(item, content, toggleBtn, header);
             }
+            header.appendChild(title);
 
 
             this.renderObject(item, content);
@@ -346,52 +336,10 @@ class ConfigEditor {
     }
 
     renderObjectField(obj, key, container) {
-        const wrapper = document.createElement("div");
-        this.applyStyles(wrapper, {
-            border: "1px solid #ccc",
-            padding: "8px",
-            marginTop: "8px",
-            borderRadius: "4px",
-        });
+        const {wrapper, header, toggleBtn, content} = this.createHtmlContent(key);
 
-        const header = document.createElement("div");
-        this.applyStyles(header, {
-            display: "flex",
-            alignItems: "center",
-            cursor: "pointer",
-            userSelect: "none",
-        });
-
-        const toggleBtn = this.createToggleButton(true);
-        const title = document.createElement("label");
-        title.textContent = this.getCleanTitle(key);
-        this.applyStyles(title, {fontWeight: "bold", flexGrow: 1});
-
-        header.appendChild(toggleBtn);
-        header.appendChild(title);
-        wrapper.appendChild(header);
-
-        const content = document.createElement("div");
-        wrapper.appendChild(content);
-
-        if (!this.toggleState.has(obj[key]))
-            this.toggleState.set(obj[key], true);
-        const isOpen = this.toggleState.get(obj[key]);
-        content.style.display = isOpen ? "" : "none";
-        toggleBtn.textContent = isOpen ? "▼" : "▶";
-
-        toggleBtn.onclick = () => {
-            const current = this.toggleState.get(obj[key]);
-            this.toggleState.set(obj[key], !current);
-            toggleBtn.textContent = !current ? "▼" : "▶";
-            content.style.display = !current ? "" : "none";
-        };
-        header.onclick = () => {
-            const current = this.toggleState.get(obj[key]);
-            this.toggleState.set(obj[key], !current);
-            toggleBtn.textContent = !current ? "▼" : "▶";
-            content.style.display = !current ? "" : "none";
-        };
+        // Initialize toggle state
+        this.setupToggling(obj[key], content, toggleBtn, header);
 
         this.renderObject(obj[key], content);
         container.appendChild(wrapper);
