@@ -1,4 +1,4 @@
-from .config_manager import pbh_get_config_manager, ConfigManager
+from ..config_manager import pbh_get_config_manager, ConfigManager
 from .models.config import Config
 from .models.prompt_model import PromptModel
 from .models.prompt_category import PromptCategory

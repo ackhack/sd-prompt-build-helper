@@ -1,5 +1,5 @@
 from modules.processing_class import StableDiffusionProcessing
-from .log_helper import pbh_log_console, pbh_log_prompt
+from ..log_helper import pbh_log_console, pbh_log_prompt
 from .prompt_builder import pbh_get_prompt_builder
 
 

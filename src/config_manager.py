@@ -1,8 +1,6 @@
-import os.path
-
 from .util import pbh_get_config_file_path, pbh_get_source_dir
 from .log_helper import pbh_log_exception, pbh_log_console
-from .models.config import Config
+from .prompt.models.config import Config
 import json
 
 from collections import namedtuple
@@ -23,32 +21,31 @@ def from_dict(data_class, data):
 
 
 class ConfigManager:
-    def __pbh_get_config_from_disk(self) -> Config | None:
+    # Get current config
+    def pbh_get_config(self) -> Config | None:
         try:
-            path = pbh_get_config_file_path()
-            # default to sample if no config is given
-            if path is None:
-                pbh_log_console("Loading sample config")
-                path = pbh_get_source_dir() + "/sample_config.json"
-            with open(path, 'r') as f:
-                data = json.load(f)
-                return from_dict(Config, data)
+            data = json.loads(self.pbh_get_config_as_string())
+            return from_dict(Config, data)
         except Exception as e:
             pbh_log_exception(e)
             return None
 
-    def __pbh_save_config_to_disk(self, config: Config):
-        self.config = config
-        with open(pbh_get_config_file_path(), 'w') as f:
-            json.dump(config, f)
-
-    # Get current config
-    def pbh_get_config(self) -> Config | None:
-        return self.__pbh_get_config_from_disk()
+    def pbh_get_config_as_string(self) -> str:
+        path = pbh_get_config_file_path()
+        # default to sample if no config is given
+        if path is None:
+            pbh_log_console("Loading sample config")
+            path = pbh_get_source_dir() + "/sample_config.json"
+        with open(path, 'r') as f:
+            return f.read()
 
     # Save config to manager and disk
     def pbh_save_config(self, config: Config):
-        self.__pbh_save_config_to_disk(config)
+        self.pbh_save_config_from_string(json.dumps(config))
+
+    def pbh_save_config_from_string(self, config: str):
+        with open(pbh_get_config_file_path(), 'w') as f:
+            f.write(config)
 
 
 instance = ConfigManager()
