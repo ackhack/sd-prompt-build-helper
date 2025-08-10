@@ -128,7 +128,7 @@ class ConfigEditor {
     constructor(configObject, containerId) {
         this.container = document.getElementById(containerId);
         this.toggleState = new WeakMap(); // store open/close state per object
-        this.renderObject(configObject, this.container);
+        this.refreshEditor(configObject);
     }
 
     parseValue(val, original) {
@@ -141,6 +141,11 @@ class ConfigEditor {
         if (obj[key].length > 0) {
             const ctor = obj[key][0]?.constructor;
             if (ctor && ctor !== Object) return ctor;
+        }
+
+        //workaround as categories is a dup
+        if (obj.constructor.name === "CategoryCondition" && key === "categories") {
+            return String;
         }
 
         // Fallback mapping by key
@@ -314,8 +319,12 @@ class ConfigEditor {
             }
             header.appendChild(title);
 
-
-            this.renderObject(item, content);
+            if (item.constructor.name === "String") {
+                this.renderPrimitiveField(array, idx.toString(), container);
+                return;
+            } else {
+                this.renderObject(item, content);
+            }
 
             const removeBtn = document.createElement("button");
             removeBtn.textContent = "Remove";
