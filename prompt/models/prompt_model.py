@@ -6,11 +6,11 @@ from dataclasses import dataclass, field
 @dataclass
 class PromptModel:
     # Name of prompt
-    name: str
+    name: str = ""
     # The actual prompt
-    prompt: str
+    prompt: str = ""
     # If prompt is used in generation
-    active: bool
+    active: bool = True
     # LoRA definitions in different base models
     loras: list[LoraDef] = field(default_factory=list)
     # When randomized, how likely it is that this is used
