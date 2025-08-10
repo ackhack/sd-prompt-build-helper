@@ -88,6 +88,7 @@ const schema = {
         }
     }
 };
+
 class PbhEditor {
     /** @type {HTMLTextAreaElement} */
     static contentField;
@@ -95,34 +96,79 @@ class PbhEditor {
     static saveButton;
     /** @type {Config} */
     static configObject;
+    static editor = undefined;
 
+    static init() {
+        this.contentField = document.getElementById("pbh-editor-box").querySelector("textarea");
+        this.saveButton = document.getElementById("pbh-editor-btn");
+        document.getElementById("pbh-editor-load-btn").click();
 
-    static parseValue(val, original) {
+    }
+
+    static save() {
+        console.log("PBH: Save called");
+        console.log(this.configObject);
+        this.contentField.value = JSON.stringify(this.configObject);
+        updateInput(this.contentField);
+        this.saveButton.click();
+    }
+
+    static load() {
+        console.log("PBH: Load called");
+        this.configObject = fromJsonRecursive(Config, this.contentField.value, schema)
+        if (this.editor === undefined || this.editor === null) {
+            this.editor = new ConfigEditor(this.configObject, "pbh-editor");
+        } else {
+            this.editor.refreshEditor(this.configObject);
+        }
+    }
+}
+
+class ConfigEditor {
+    constructor(configObject, containerId) {
+        this.container = document.getElementById(containerId);
+        this.toggleState = new WeakMap(); // store open/close state per object
+        this.renderObject(configObject, this.container);
+    }
+
+    parseValue(val, original) {
         if (typeof original === "number") return Number(val) || 0;
         if (typeof original === "boolean") return !!val;
         return val;
     }
 
-    static getArrayItemConstructor(obj, key) {
+    getArrayItemConstructor(obj, key) {
         if (obj[key].length > 0) {
             const ctor = obj[key][0]?.constructor;
             if (ctor && ctor !== Object) return ctor;
         }
+
+        // Fallback mapping by key
+        const classMap = {
+            categories: PromptCategory,
+            prompts: PromptModel,
+            loras: LoraDef,
+            tags: String, // For array of strings
+        };
+        if (classMap[key]) return classMap[key];
+
         try {
             const defaultInstance = new obj.constructor();
             if (Array.isArray(defaultInstance[key]) && defaultInstance[key].length > 0) {
                 const ctor = defaultInstance[key][0]?.constructor;
                 if (ctor && ctor !== Object) return ctor;
             }
-        } catch {}
+        } catch {
+        }
+
         return Object;
     }
 
-    static applyStyles(element, styles) {
+    applyStyles(element, styles) {
         Object.assign(element.style, styles);
     }
 
-    static createToggleButton(isOpen) {
+    createToggleButton(isOpen) {
         const btn = document.createElement("button");
         btn.textContent = isOpen ? "▼" : "▶";
         this.applyStyles(btn, {
@@ -137,172 +183,266 @@ class PbhEditor {
         return btn;
     }
 
-    static renderObject(obj, container) {
+    renderObject(obj, container) {
         for (const key in obj) {
             if (Array.isArray(obj[key])) {
-                const wrapper = document.createElement("div");
-                this.applyStyles(wrapper, {
-                    border: "1px solid #ccc",
-                    padding: "8px",
-                    marginTop: "8px",
-                    borderRadius: "4px",
-                });
-
-                const header = document.createElement("div");
-                this.applyStyles(header, { display: "flex", alignItems: "center", cursor: "pointer", userSelect: "none" });
-
-                const toggleBtn = this.createToggleButton(true);
-                const title = document.createElement("label");
-                title.textContent = this.getCleanTitle(key);
-                this.applyStyles(title, { fontWeight: "bold", flexGrow: 1 });
-
-                header.appendChild(toggleBtn);
-                header.appendChild(title);
-                wrapper.appendChild(header);
-
-                const content = document.createElement("div");
-                wrapper.appendChild(content);
-
-                let open = true;
-                toggleBtn.onclick = () => {
-                    open = !open;
-                    toggleBtn.textContent = open ? "▼" : "▶";
-                    content.style.display = open ? "" : "none";
-                };
-
-                obj[key].forEach((item, idx) => {
-                    const itemDiv = document.createElement("div");
-                    this.applyStyles(itemDiv, {
-                        marginLeft: "20px",
-                        border: "1px solid #ccc",
-                        padding: "8px",
-                        marginTop: "8px",
-                        borderRadius: "4px",
-                    });
-                    this.renderObject(item, itemDiv);
-
-                    const removeBtn = document.createElement("button");
-                    removeBtn.textContent = "Remove " + key.slice(0, -1);
-                    this.applyStyles(removeBtn, { fontSize: "0.8em", marginLeft: "5px", marginTop: "5px", cursor: "pointer" });
-                    removeBtn.onclick = () => {
-                        obj[key].splice(idx, 1);
-                        this.refreshEditor();
-                    };
-                    itemDiv.appendChild(removeBtn);
-
-                    content.appendChild(itemDiv);
-                });
-
-                const addBtn = document.createElement("button");
-                addBtn.textContent = "Add " + key.slice(0, -1);
-                addBtn.onclick = () => {
-                    const ctor = this.getArrayItemConstructor(obj, key);
-                    obj[key].push(new ctor());
-                    this.refreshEditor();
-                };
-                this.applyStyles(addBtn, { marginTop: "8px", cursor: "pointer" });
-                content.appendChild(addBtn);
-
-                container.appendChild(wrapper);
-
+                this.renderArray(obj, key, container);
             } else if (typeof obj[key] === "object" && obj[key] !== null) {
-                const wrapper = document.createElement("div");
-                this.applyStyles(wrapper, {
-                    border: "1px solid #ccc",
-                    padding: "8px",
-                    marginTop: "8px",
-                    borderRadius: "4px",
-                });
-
-                const header = document.createElement("div");
-                this.applyStyles(header, { display: "flex", alignItems: "center", cursor: "pointer", userSelect: "none" });
-
-                const toggleBtn = this.createToggleButton(true);
-                const title = document.createElement("label");
-                title.textContent = this.getCleanTitle(key);
-                this.applyStyles(title, { fontWeight: "bold", flexGrow: 1 });
-
-                header.appendChild(toggleBtn);
-                header.appendChild(title);
-                wrapper.appendChild(header);
-
-                const content = document.createElement("div");
-                wrapper.appendChild(content);
-
-                let open = true;
-                toggleBtn.onclick = () => {
-                    open = !open;
-                    toggleBtn.textContent = open ? "▼" : "▶";
-                    content.style.display = open ? "" : "none";
-                };
-
-                this.renderObject(obj[key], content);
-                container.appendChild(wrapper);
-
+                this.renderObjectField(obj, key, container);
             } else {
-                const label = document.createElement("label");
-                label.textContent = this.getCleanTitle(key);
-                this.applyStyles(label, { display: "block", marginTop: "8px", fontWeight: "bold" });
-
-                let input;
-                if (typeof obj[key] === "boolean") {
-                    input = document.createElement("input");
-                    input.type = "checkbox";
-                    input.checked = obj[key];
-                    input.style.marginLeft = "6px";
-                    input.addEventListener("change", () => {
-                        obj[key] = input.checked;
-                    });
-                    container.appendChild(label);
-                    label.appendChild(input); // checkbox inside label for better UX
-                } else {
-                    input = document.createElement("input");
-                    input.value = obj[key];
-                    this.applyStyles(input, { width: "300px", padding: "4px" });
-                    input.addEventListener("input", () => {
-                        obj[key] = this.parseValue(input.value, obj[key]);
-                    });
-                    container.appendChild(label);
-                    container.appendChild(input);
-                }
+                this.renderPrimitiveField(obj, key, container);
             }
         }
     }
 
-    static getCleanTitle(input){
+    renderArray(obj, key, container) {
+        const wrapper = document.createElement("div");
+        this.applyStyles(wrapper, {
+            border: "1px solid #ccc",
+            padding: "8px",
+            marginTop: "8px",
+            borderRadius: "4px",
+        });
+
+        const header = document.createElement("div");
+        this.applyStyles(header, {
+            display: "flex",
+            alignItems: "center",
+            cursor: "pointer",
+            userSelect: "none",
+        });
+
+        const toggleBtn = this.createToggleButton(true);
+        const title = document.createElement("label");
+        title.textContent = this.getCleanTitle(key);
+        this.applyStyles(title, {fontWeight: "bold", flexGrow: 1});
+
+        header.appendChild(toggleBtn);
+        header.appendChild(title);
+        wrapper.appendChild(header);
+
+        // Content div contains *only* the array items (no add button)
+        const content = document.createElement("div");
+        wrapper.appendChild(content);
+
+        // Add button is outside content, so won't be removed during re-rendering items
+        const addBtn = document.createElement("button");
+        addBtn.textContent = "Add " + key.slice(0, -1);
+        this.applyStyles(addBtn, {marginTop: "8px", cursor: "pointer"});
+        wrapper.appendChild(addBtn);
+
+        // Initialize toggle state
+        if (!this.toggleState.has(obj[key]))
+            this.toggleState.set(obj[key], false);
+        const isOpen = this.toggleState.get(obj[key]);
+        content.style.display = isOpen ? "" : "none";
+        toggleBtn.textContent = isOpen ? "▼" : "▶";
+
+        toggleBtn.onclick = () => {
+            const current = this.toggleState.get(obj[key]);
+            this.toggleState.set(obj[key], !current);
+            toggleBtn.textContent = !current ? "▼" : "▶";
+            content.style.display = !current ? "" : "none";
+        };
+        header.onclick = () => {
+            const current = this.toggleState.get(obj[key]);
+            this.toggleState.set(obj[key], !current);
+            toggleBtn.textContent = !current ? "▼" : "▶";
+            content.style.display = !current ? "" : "none";
+        };
+
+        // Render initial items
+        this.renderArrayItems(obj[key], content);
+
+        addBtn.onclick = () => {
+            const ctor = this.getArrayItemConstructor(obj, key);
+            obj[key].push(new ctor());
+            this.renderArrayItems(obj[key], content);
+        };
+
+        container.appendChild(wrapper);
+    }
+
+    renderArrayItems(array, container) {
+        container.innerHTML = "";
+
+        array.forEach((item, idx) => {
+            // Wrap each item in a collapsible container
+            const wrapper = document.createElement("div");
+            this.applyStyles(wrapper, {
+                border: "1px solid #aaa",
+                marginTop: "6px",
+                borderRadius: "4px",
+            });
+
+            const header = document.createElement("div");
+            this.applyStyles(header, {
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                userSelect: "none",
+                padding: "4px 8px",
+                fontWeight: "bold",
+            });
+
+            // Show a summary title for the item, for example the category's name or just index
+            const titleText = item.name || `Item ${idx + 1}`;
+            const title = document.createElement("span");
+            title.textContent = titleText;
+            this.applyStyles(title, {flexGrow: 1});
+            header.appendChild(title);
+
+            wrapper.appendChild(header);
+
+            const content = document.createElement("div");
+            this.applyStyles(content, {padding: "8px"});
+            wrapper.appendChild(content);
+
+            //only add toggling content if item is object
+            if (typeof item === "object") {
+                // Track toggle state per item object
+                if (typeof item === "object" && !this.toggleState.has(item))
+                    this.toggleState.set(item, false);
+                const isOpen = this.toggleState.get(item);
+                content.style.display = isOpen ? "" : "none";
+
+                const toggleBtn = this.createToggleButton(true);
+                header.appendChild(toggleBtn);
+                toggleBtn.textContent = isOpen ? "▼" : "▶";
+
+                toggleBtn.onclick = () => {
+                    const current = this.toggleState.get(item);
+                    this.toggleState.set(item, !current);
+                    toggleBtn.textContent = !current ? "▼" : "▶";
+                    content.style.display = !current ? "" : "none";
+                };
+                header.onclick = () => {
+                    const current = this.toggleState.get(item);
+                    this.toggleState.set(item, !current);
+                    toggleBtn.textContent = !current ? "▼" : "▶";
+                    content.style.display = !current ? "" : "none";
+                };
+            }
+
+
+            this.renderObject(item, content);
+
+            const removeBtn = document.createElement("button");
+            removeBtn.textContent = "Remove";
+            this.applyStyles(removeBtn, {
+                fontSize: "0.8em",
+                marginLeft: "5px",
+                marginTop: "5px",
+                cursor: "pointer",
+            });
+            removeBtn.onclick = () => {
+                array.splice(idx, 1);
+                this.renderArrayItems(array, container);
+            };
+            content.appendChild(removeBtn);
+
+            container.appendChild(wrapper);
+        });
+    }
+
+    renderObjectField(obj, key, container) {
+        const wrapper = document.createElement("div");
+        this.applyStyles(wrapper, {
+            border: "1px solid #ccc",
+            padding: "8px",
+            marginTop: "8px",
+            borderRadius: "4px",
+        });
+
+        const header = document.createElement("div");
+        this.applyStyles(header, {
+            display: "flex",
+            alignItems: "center",
+            cursor: "pointer",
+            userSelect: "none",
+        });
+
+        const toggleBtn = this.createToggleButton(true);
+        const title = document.createElement("label");
+        title.textContent = this.getCleanTitle(key);
+        this.applyStyles(title, {fontWeight: "bold", flexGrow: 1});
+
+        header.appendChild(toggleBtn);
+        header.appendChild(title);
+        wrapper.appendChild(header);
+
+        const content = document.createElement("div");
+        wrapper.appendChild(content);
+
+        if (!this.toggleState.has(obj[key]))
+            this.toggleState.set(obj[key], true);
+        const isOpen = this.toggleState.get(obj[key]);
+        content.style.display = isOpen ? "" : "none";
+        toggleBtn.textContent = isOpen ? "▼" : "▶";
+
+        toggleBtn.onclick = () => {
+            const current = this.toggleState.get(obj[key]);
+            this.toggleState.set(obj[key], !current);
+            toggleBtn.textContent = !current ? "▼" : "▶";
+            content.style.display = !current ? "" : "none";
+        };
+        header.onclick = () => {
+            const current = this.toggleState.get(obj[key]);
+            this.toggleState.set(obj[key], !current);
+            toggleBtn.textContent = !current ? "▼" : "▶";
+            content.style.display = !current ? "" : "none";
+        };
+
+        this.renderObject(obj[key], content);
+        container.appendChild(wrapper);
+    }
+
+    renderPrimitiveField(obj, key, container) {
+        const label = document.createElement("label");
+        label.textContent = this.getCleanTitle(key);
+        this.applyStyles(label, {display: "block", marginTop: "8px", fontWeight: "bold"});
+
+        let input = document.createElement("input");
+        if (typeof obj[key] === "boolean") {
+            input.type = "checkbox";
+            input.checked = obj[key];
+            this.applyStyles(input, {
+                marginLeft: "6px"
+            })
+            input.addEventListener("change", () => {
+                obj[key] = input.checked;
+            });
+        } else {
+            input.value = obj[key];
+            this.applyStyles(input, {
+                width: "300px",
+                padding: "4px",
+                border: "1px solid #aaa",
+                marginLeft: "6px"
+            });
+            input.addEventListener("input", () => {
+                obj[key] = this.parseValue(input.value, obj[key]);
+            });
+        }
+        container.appendChild(label);
+        label.appendChild(input);
+    }
+
+    getCleanTitle(input) {
         input = input.replace(/_/g, " ");
         let words = input.split(" ");
         for (let i = 0; i < words.length; i++) {
             words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
         }
-        return " ".join(words);
+        return words.join(" ");
     }
 
-    static refreshEditor() {
-        document.getElementById("pbh-editor").innerHTML = "";
-        this.renderObject(this.configObject, document.getElementById("pbh-editor"));
-    }
-
-    static init() {
-        this.contentField = document.getElementById("pbh-editor-box").querySelector("textarea");
-        this.saveButton = document.getElementById("pbh-editor-btn");
-        document.getElementById("pbh-editor-load-btn").click();
-    }
-
-    static save() {
-        console.log("PBH: Save called");
-        console.log(this.configObject);
-        this.contentField.value = JSON.stringify(this.configObject);
-        updateInput(this.contentField);
-        this.saveButton.click();
-    }
-
-    static load() {
-        console.log("PBH: Load called");
-        this.configObject = fromJsonRecursive(Config, this.contentField.value, schema)
-        this.refreshEditor();
+    refreshEditor(configObject) {
+        this.container.innerHTML = "";
+        this.renderObject(configObject, this.container);
     }
 }
+
 
 onUiLoaded(() => {
     PbhEditor.init();

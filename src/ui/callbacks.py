@@ -27,12 +27,10 @@ def editor_ui():
 
 
 def load() -> str:
+    pbh_log_console("Loading from backend")
     return pbh_get_config_manager().pbh_get_config_as_string()
 
 
 def save(json_str: str):
-    #TODO remove this when ui finished
     pbh_log_console("Saving on backend " + str(len(json_str)))
-    if True:
-        return
     pbh_get_config_manager().pbh_save_config_from_string(json_str)
