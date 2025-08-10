@@ -7,7 +7,7 @@ def editor_ui():
     with gr.Blocks() as TAGS_EDITOR:
         with gr.Row():
             save_btn = gr.Button("Save", variant="primary", interactive=False)
-            load_btn = gr.Button("Load")
+            load_btn = gr.Button("Load", elem_id="pbh-editor-load-btn")
 
         gr.HTML('<div id="pbh-editor"></div>')
 
@@ -32,7 +32,7 @@ def load() -> str:
 
 def save(json_str: str):
     #TODO remove this when ui finished
-    pbh_log_console("saving: " + json_str)
+    pbh_log_console("Saving on backend " + str(len(json_str)))
     if True:
         return
     pbh_get_config_manager().pbh_save_config_from_string(json_str)
