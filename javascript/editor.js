@@ -217,7 +217,7 @@ class ConfigEditor {
         wrapper.appendChild(addBtn);
 
         // Initialize toggle state
-        this.setupToggling(obj[key], content, toggleBtn, header);
+        this.setupToggling(obj[key], content, toggleBtn, header, undefined);
 
         // Render initial items
         this.renderArrayItems(obj[key], content);
@@ -231,7 +231,7 @@ class ConfigEditor {
         container.appendChild(wrapper);
     }
 
-    setupToggling(item, content, toggleBtn, header) {
+    setupToggling(item, content, toggleBtn, header, header2) {
         if (!this.toggleState.has(item))
             this.toggleState.set(item, false);
         const isOpen = this.toggleState.get(item);
@@ -250,6 +250,14 @@ class ConfigEditor {
             toggleBtn.textContent = !current ? "▼" : "▶";
             content.style.display = !current ? "" : "none";
         };
+        if (header2 !== undefined) {
+            header2.onclick = () => {
+                const current = this.toggleState.get(item);
+                this.toggleState.set(item, !current);
+                toggleBtn.textContent = !current ? "▼" : "▶";
+                content.style.display = !current ? "" : "none";
+            };
+        }
     }
 
     createHtmlContent(obj, key) {
@@ -303,6 +311,9 @@ class ConfigEditor {
                 borderRadius: "4px",
             });
 
+            const content = document.createElement("div");
+            this.applyStyles(content, {padding: "8px"});
+
             const header = document.createElement("div");
             this.applyStyles(header, {
                 display: "flex",
@@ -312,36 +323,67 @@ class ConfigEditor {
                 padding: "4px 8px",
                 fontWeight: "bold",
             });
-
-
             wrapper.appendChild(header);
-
-            const content = document.createElement("div");
-            this.applyStyles(content, {padding: "8px"});
             wrapper.appendChild(content);
 
+            const leftHeader = document.createElement("div");
+            const midHeader = document.createElement("div");
+            header.appendChild(leftHeader);
             //only add toggling content if item is object
             if (typeof item === "object") {
                 const toggleBtn = this.createToggleButton(true);
-                header.appendChild(toggleBtn);
-                this.setupToggling(item, content, toggleBtn, header);
+                leftHeader.appendChild(toggleBtn);
+                this.setupToggling(item, content, toggleBtn, leftHeader, midHeader);
             }
 
             // Show a summary title for the item, for example the category's name or just index
             const titleText = item.name || `Item ${idx + 1}`;
 
             if (item.constructor.name !== "String" && "active" in item) {
-                header.appendChild(this.getInputForProperty(item, "active"));
+                leftHeader.appendChild(this.getInputForProperty(item, "active"));
             }
 
             if (item.constructor.name !== "String" && "name" in item) {
-                header.appendChild(this.getInputForProperty(item, "name"));
+                leftHeader.appendChild(this.getInputForProperty(item, "name"));
             } else {
                 const title = document.createElement("span");
                 title.textContent = titleText;
                 this.applyStyles(title, {flexGrow: 1});
-                header.appendChild(title);
+                leftHeader.appendChild(title);
             }
+
+            header.appendChild(midHeader);
+            this.applyStyles(midHeader, {
+                flexGrow: "1",
+                minHeight: "36px",
+            });
+
+            const rightHeader = document.createElement("div");
+            header.appendChild(rightHeader);
+
+            let upButton = document.createElement("button");
+            upButton.textContent = "↑";
+            upButton.onclick = () => {
+                if (idx > 0) {
+                    let tmp = array[idx - 1];
+                    array[idx - 1] = array[idx];
+                    array[idx] = tmp;
+                    this.renderArrayItems(array, container);
+                }
+            }
+            rightHeader.appendChild(upButton);
+
+            let downButton = document.createElement("button");
+            downButton.textContent = "↓";
+            downButton.onclick = () => {
+                if (idx < array.length - 1) {
+                    let tmp = array[idx + 1];
+                    array[idx + 1] = array[idx];
+                    array[idx] = tmp;
+                    this.renderArrayItems(array, container);
+                }
+            }
+            rightHeader.appendChild(downButton);
 
             if (item.constructor.name === "String") {
                 this.renderPrimitiveField(array, idx.toString(), container);
@@ -372,7 +414,7 @@ class ConfigEditor {
         const {wrapper, header, toggleBtn, content} = this.createHtmlContent(obj, key);
 
         // Initialize toggle state
-        this.setupToggling(obj[key], content, toggleBtn, header);
+        this.setupToggling(obj[key], content, toggleBtn, header, undefined);
 
         this.renderObject(obj[key], content);
         container.appendChild(wrapper);
