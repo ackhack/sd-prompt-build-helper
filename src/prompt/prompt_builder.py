@@ -30,7 +30,7 @@ class PromptBuilder:
 
             final_prompt.pbh_add_category(category)
 
-            if not category.randomized.randomized:
+            if not category.randomized.active:
                 # Simple go through all prompts that are active
                 for prompt in category.prompts:
                     final_prompt.pbh_add_prompt(prompt, config.base_model)
