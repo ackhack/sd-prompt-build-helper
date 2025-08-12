@@ -327,7 +327,7 @@ class ConfigEditor {
             }
 
             const removeBtn = document.createElement("button");
-            removeBtn.textContent = "Remove";
+            removeBtn.textContent = "Remove " + titleText;
             this.applyStyles(removeBtn, {
                 fontSize: "0.8em",
                 marginLeft: "5px",
