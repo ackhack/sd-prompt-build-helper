@@ -142,6 +142,11 @@
                 "name": "Park",
                 "active":true,
                 "prompt": "outside, trees, park,"
+            },
+            {
+                "name": "Garden",
+                "active":true,
+                "prompt": "outside, garden, lawn, tree,"
             }
         ]
     },
