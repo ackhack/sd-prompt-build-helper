@@ -217,7 +217,7 @@ class ConfigEditor {
         wrapper.appendChild(addBtn);
 
         // Initialize toggle state
-        this.setupToggling(obj[key], content, toggleBtn, header, undefined);
+        this.setupToggling(obj[key], content, toggleBtn, header);
 
         // Render initial items
         this.renderArrayItems(obj[key], content);
@@ -231,7 +231,7 @@ class ConfigEditor {
         container.appendChild(wrapper);
     }
 
-    setupToggling(item, content, toggleBtn, header, header2) {
+    setupToggling(item, content, toggleBtn, header) {
         if (!this.toggleState.has(item))
             this.toggleState.set(item, false);
         const isOpen = this.toggleState.get(item);
@@ -250,14 +250,6 @@ class ConfigEditor {
             toggleBtn.textContent = !current ? "▼" : "▶";
             content.style.display = !current ? "" : "none";
         };
-        if (header2 !== undefined) {
-            header2.onclick = () => {
-                const current = this.toggleState.get(item);
-                this.toggleState.set(item, !current);
-                toggleBtn.textContent = !current ? "▼" : "▶";
-                content.style.display = !current ? "" : "none";
-            };
-        }
     }
 
     createHtmlContent(obj, key) {
@@ -283,7 +275,11 @@ class ConfigEditor {
         const renderedObject = obj[key];
 
         if ("active" in renderedObject) {
-            header.appendChild(this.getInputForProperty(renderedObject, "active"));
+            const input = this.getInputForProperty(renderedObject, "active");
+            header.appendChild(input);
+            this.applyStyles(input, {
+                marginRight: "6px"
+            })
         }
 
         const title = document.createElement("label");
@@ -326,37 +322,35 @@ class ConfigEditor {
             wrapper.appendChild(header);
             wrapper.appendChild(content);
 
-            const leftHeader = document.createElement("div");
-            const midHeader = document.createElement("div");
-            header.appendChild(leftHeader);
             //only add toggling content if item is object
             if (typeof item === "object") {
                 const toggleBtn = this.createToggleButton(true);
-                leftHeader.appendChild(toggleBtn);
-                this.setupToggling(item, content, toggleBtn, leftHeader, midHeader);
+                header.appendChild(toggleBtn);
+                this.setupToggling(item, content, toggleBtn, header);
             }
 
             // Show a summary title for the item, for example the category's name or just index
             const titleText = item.name || `Item ${idx + 1}`;
 
             if (item.constructor.name !== "String" && "active" in item) {
-                leftHeader.appendChild(this.getInputForProperty(item, "active"));
+                header.appendChild(this.getInputForProperty(item, "active"));
             }
 
             if (item.constructor.name !== "String" && "name" in item) {
-                leftHeader.appendChild(this.getInputForProperty(item, "name"));
+                const input = this.getInputForProperty(item, "name", false);
+                header.appendChild(input);
+                this.applyStyles(input, {
+                    flexGrow: "1",
+                });
             } else {
                 const title = document.createElement("span");
                 title.textContent = titleText;
                 this.applyStyles(title, {flexGrow: 1});
-                leftHeader.appendChild(title);
+                header.appendChild(title);
+                this.applyStyles(title, {
+                    flexGrow: "1",
+                });
             }
-
-            header.appendChild(midHeader);
-            this.applyStyles(midHeader, {
-                flexGrow: "1",
-                minHeight: "36px",
-            });
 
             const rightHeader = document.createElement("div");
             header.appendChild(rightHeader);
@@ -414,7 +408,7 @@ class ConfigEditor {
         const {wrapper, header, toggleBtn, content} = this.createHtmlContent(obj, key);
 
         // Initialize toggle state
-        this.setupToggling(obj[key], content, toggleBtn, header, undefined);
+        this.setupToggling(obj[key], content, toggleBtn, header);
 
         this.renderObject(obj[key], content);
         container.appendChild(wrapper);
@@ -422,14 +416,14 @@ class ConfigEditor {
 
     renderPrimitiveField(obj, key, container) {
         const label = document.createElement("label");
-        label.textContent = this.getCleanTitle(key);
-        this.applyStyles(label, {display: "block", marginTop: "8px", fontWeight: "bold"});
+        label.textContent = this.getCleanTitle(key) + ":";
+        this.applyStyles(label, {marginTop: "8px", fontWeight: "bold", display: "flex", alignItems: "center"});
         let input = this.getInputForProperty(obj, key);
         container.appendChild(label);
         label.appendChild(input);
     }
 
-    getInputForProperty(obj, key) {
+    getInputForProperty(obj, key, standsOut = true) {
         let input = document.createElement("input");
         if (typeof obj[key] === "boolean") {
             input.type = "checkbox";
@@ -443,11 +437,19 @@ class ConfigEditor {
         } else {
             input.value = obj[key];
             this.applyStyles(input, {
-                width: "300px",
+                flexGrow: 1,
                 padding: "4px",
-                border: "1px solid #aaa",
                 marginLeft: "6px"
             });
+            if (standsOut) {
+                this.applyStyles(input, {
+                    border: "1px solid #aaa",
+                })
+            } else {
+                this.applyStyles(input, {
+                    backgroundColor: "inherit",
+                })
+            }
             input.addEventListener("input", () => {
                 obj[key] = this.parseValue(input.value, obj[key]);
             });
