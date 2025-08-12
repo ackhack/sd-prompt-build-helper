@@ -7,6 +7,10 @@ def pbh_log_console(content):
     log.info("Prompt Build Helper: " + content)
 
 
+def pbh_log_debug(content):
+    log.debug("Prompt Build Helper: " + content)
+
+
 def pbh_log_exception(e: Exception):
     pbh_log_console(str(e))
     pbh_log_file("Error: " + str(e))

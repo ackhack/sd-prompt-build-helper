@@ -4,6 +4,7 @@ from .models.prompt_model import PromptModel
 from .models.prompt_category import PromptCategory
 from .models.category_condition import CategoryCondition
 from .final_prompt_builder import FinalPromptBuilder
+from ..log_helper import pbh_log_debug
 from random import randint, choices
 
 
@@ -16,27 +17,34 @@ class PromptBuilder:
     def pbh_generate_prompts(self):
         config = self.config_manger.pbh_get_config()
         if config is None or not config.active:
+            pbh_log_debug("Failed to get config or not active, not doing anything")
             return None
         return (self.__pbh_generate_prompt_from_config(config, "positive"),
                 self.__pbh_generate_prompt_from_config(config, "negative"))
 
     def __pbh_generate_prompt_from_config(self, config: Config, prompt_type: str) -> str:
         final_prompt = FinalPromptBuilder()
+        pbh_log_debug("Starting " + prompt_type + " prompt")
 
         for category in config.categories:
+            pbh_log_debug("Processing " + category.name)
             if category.type != prompt_type or not category.active or not self.__is_category_included_by_conditions(
                     category.conditions, final_prompt):
+                pbh_log_debug(category.name + ": Ignoring")
                 continue
 
             final_prompt.pbh_add_category(category)
 
             if not category.randomized.active:
+                pbh_log_debug(category.name + ": Not randomized")
                 # Simple go through all prompts that are active
                 for prompt in category.prompts:
                     final_prompt.pbh_add_prompt(prompt, config.base_model)
             else:
+                pbh_log_debug(category.name + ": Randomized")
                 # Calc the amount of prompt models to use
                 n_mdl = self.__get_number_of_prompt_models_to_add(category)
+                pbh_log_debug(category.name + ": Adding " + str(n_mdl) + " prompts")
 
                 # Get all active prompts and if there are more prompts then we need we randomly pick some of them
                 active_prompts = self.__get_random_prompts_from_list([p for p in category.prompts if p.active], n_mdl)
@@ -61,19 +69,29 @@ class PromptBuilder:
         if not condition.and_condition:
             for search_tag in condition.tags:
                 if search_tag in added_tags:
+                    pbh_log_debug("Condition trigger on " + search_tag)
                     return not condition.negative
+
             for search_category in condition.categories:
                 if search_category in added_categories:
+                    pbh_log_debug("Condition trigger on " + search_category)
                     return not condition.negative
+
+            pbh_log_debug("Condition not triggered")
             return condition.negative
         # and condition, look if any is not present
         else:
             for search_tag in condition.tags:
                 if search_tag not in added_tags:
+                    pbh_log_debug("Condition trigger on " + search_tag)
                     return condition.negative
+
             for search_category in condition.categories:
                 if search_category not in added_categories:
+                    pbh_log_debug("Condition trigger on " + search_category)
                     return condition.negative
+
+            pbh_log_debug("Condition not triggered")
             return not condition.negative
 
     def __get_number_of_prompt_models_to_add(self, category: PromptCategory) -> int:
@@ -85,6 +103,7 @@ class PromptBuilder:
             min_mdl = 0
         if min_mdl > max_mdl:
             min_mdl = max_mdl
+        pbh_log_debug("Choosing between " + str(min_mdl) + " and " + str(max_mdl) + " prompts")
         n_mdl = randint(min_mdl, max_mdl)
         return n_mdl
 
@@ -97,6 +116,7 @@ class PromptBuilder:
             weights = list(map(lambda p: p.weight, prompts))
             index = choices(range(len(weights)), weights=weights, k=1)[0]
             res.append(prompts[index])
+            pbh_log_debug("Picked prompt " + prompts[index].name)
             prompts.remove(prompts[index])
             count -= 1
         return res

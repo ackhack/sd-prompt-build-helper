@@ -1,6 +1,6 @@
 from .models.prompt_model import PromptModel
 from .models.prompt_category import PromptCategory
-
+from ..log_helper import pbh_log_debug
 
 class FinalPromptBuilder:
 
@@ -13,16 +13,20 @@ class FinalPromptBuilder:
             self.category_collection.append(category.name)
 
     def pbh_add_prompt(self, prompt: PromptModel, base_model: str):
+        pbh_log_debug("Try adding " + prompt.name)
         if not prompt.active:
+            pbh_log_debug(prompt.name + ": Not active")
             return
         self.pbh_add_string(prompt.prompt)
         for lora in prompt.loras:
+            pbh_log_debug(prompt.name + ": Checking LoRA for " + lora.base_model_type)
             if lora.base_model_type == base_model:
                 self.pbh_add_string(lora.name)
 
     def pbh_add_string(self, content: str | None):
         if content is None or len(content) == 0:
             return
+        pbh_log_debug("Adding string " + content)
         for tag in map(lambda p: p.strip(), content.strip().split(",")):
             self.__pbh_add_single_tag(tag)
 
@@ -30,6 +34,7 @@ class FinalPromptBuilder:
         if tag is None or len(tag) == 0:
             return
         if tag not in self.tag_collection:
+            pbh_log_debug("Adding tag " + tag)
             self.tag_collection.append(tag)
 
     def pbh_get_current_tags(self) -> list[str]:
@@ -39,4 +44,6 @@ class FinalPromptBuilder:
         return self.category_collection
 
     def pbh_get(self) -> str:
-        return ", ".join(self.tag_collection)
+        res = ", ".join(self.tag_collection)
+        pbh_log_debug("Completed prompt: " + res)
+        return res
