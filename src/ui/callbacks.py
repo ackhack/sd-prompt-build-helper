@@ -8,22 +8,27 @@ def editor_ui():
         gr.HTML("""
         <style>
         #pbh-btn-col {
-            flex: 0 0 auto !important; /* Prevent stretching */
-            width: auto !important;    /* Fit to buttons */
+            width: auto !important;
             position: fixed;
+            border: 1px solid white;
+            display: flex;
+            flex-direction: row;
+            border-radius: 4px;
+        }
+        #pbh-editor {
+            margin-top: 45px;
         }
         </style>
         """)
 
         with gr.Row():
-            # Left column with buttons
+            with gr.Column():
+                gr.HTML('<div id="pbh-editor"></div>')
+
             with gr.Column(elem_id="pbh-btn-col"):
                 save_btn = gr.Button("Save", variant="primary", interactive=False)
                 load_btn = gr.Button("Load", elem_id="pbh-editor-load-btn")
 
-            # Right column with editor
-            with gr.Column():
-                gr.HTML('<div id="pbh-editor"></div>')
 
         with gr.Column(visible=False):
             tags = gr.Textbox(elem_id="pbh-editor-box")
