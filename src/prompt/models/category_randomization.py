@@ -8,4 +8,4 @@ class CategoryRandomization:
     #Min amount of prompts to add to the final prompt, negative number for all
     min_prompts: int = -1
     #If prompts should be randomly added to the final prompt
-    randomized: bool = False
+    active: bool = False

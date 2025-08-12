@@ -54,7 +54,7 @@ class CategoryCondition {
 }
 
 class CategoryRandomization {
-    randomized = false;
+    active = false;
     max_prompts = -1;
     min_prompts = -1;
 }
@@ -190,6 +190,13 @@ class ConfigEditor {
 
     renderObject(obj, container) {
         for (const key in obj) {
+            //don't render name or active, except for config itself
+            if (obj.constructor.name !== "Config" && key === "active") {
+                continue
+            }
+            if (key === "name") {
+                continue
+            }
             if (Array.isArray(obj[key])) {
                 this.renderArray(obj, key, container);
             } else if (typeof obj[key] === "object" && obj[key] !== null) {
@@ -201,7 +208,7 @@ class ConfigEditor {
     }
 
     renderArray(obj, key, container) {
-        const {wrapper, header, toggleBtn, content} = this.createHtmlContent(key);
+        const {wrapper, header, toggleBtn, content} = this.createHtmlContent(obj, key);
 
         // Add button is outside content, so won't be removed during re-rendering items
         const addBtn = document.createElement("button");
@@ -245,7 +252,7 @@ class ConfigEditor {
         };
     }
 
-    createHtmlContent(key) {
+    createHtmlContent(obj, key) {
         const wrapper = document.createElement("div");
         this.applyStyles(wrapper, {
             border: "1px solid #ccc",
@@ -263,12 +270,19 @@ class ConfigEditor {
         });
 
         const toggleBtn = this.createToggleButton(true);
+        header.appendChild(toggleBtn);
+
+        const renderedObject = obj[key];
+
+        if ("active" in renderedObject) {
+            header.appendChild(this.getInputForProperty(renderedObject, "active"));
+        }
+
         const title = document.createElement("label");
         title.textContent = this.getCleanTitle(key);
         this.applyStyles(title, {fontWeight: "bold", flexGrow: 1});
-
-        header.appendChild(toggleBtn);
         header.appendChild(title);
+
         wrapper.appendChild(header);
 
         // Content div contains *only* the array items (no add button)
@@ -299,11 +313,6 @@ class ConfigEditor {
                 fontWeight: "bold",
             });
 
-            // Show a summary title for the item, for example the category's name or just index
-            const titleText = item.name || `Item ${idx + 1}`;
-            const title = document.createElement("span");
-            title.textContent = titleText;
-            this.applyStyles(title, {flexGrow: 1});
 
             wrapper.appendChild(header);
 
@@ -317,7 +326,22 @@ class ConfigEditor {
                 header.appendChild(toggleBtn);
                 this.setupToggling(item, content, toggleBtn, header);
             }
-            header.appendChild(title);
+
+            // Show a summary title for the item, for example the category's name or just index
+            const titleText = item.name || `Item ${idx + 1}`;
+
+            if (item.constructor.name !== "String" && "active" in item) {
+                header.appendChild(this.getInputForProperty(item, "active"));
+            }
+
+            if (item.constructor.name !== "String" && "name" in item) {
+                header.appendChild(this.getInputForProperty(item, "name"));
+            } else {
+                const title = document.createElement("span");
+                title.textContent = titleText;
+                this.applyStyles(title, {flexGrow: 1});
+                header.appendChild(title);
+            }
 
             if (item.constructor.name === "String") {
                 this.renderPrimitiveField(array, idx.toString(), container);
@@ -345,7 +369,7 @@ class ConfigEditor {
     }
 
     renderObjectField(obj, key, container) {
-        const {wrapper, header, toggleBtn, content} = this.createHtmlContent(key);
+        const {wrapper, header, toggleBtn, content} = this.createHtmlContent(obj, key);
 
         // Initialize toggle state
         this.setupToggling(obj[key], content, toggleBtn, header);
@@ -358,7 +382,12 @@ class ConfigEditor {
         const label = document.createElement("label");
         label.textContent = this.getCleanTitle(key);
         this.applyStyles(label, {display: "block", marginTop: "8px", fontWeight: "bold"});
+        let input = this.getInputForProperty(obj, key);
+        container.appendChild(label);
+        label.appendChild(input);
+    }
 
+    getInputForProperty(obj, key) {
         let input = document.createElement("input");
         if (typeof obj[key] === "boolean") {
             input.type = "checkbox";
@@ -381,8 +410,7 @@ class ConfigEditor {
                 obj[key] = this.parseValue(input.value, obj[key]);
             });
         }
-        container.appendChild(label);
-        label.appendChild(input);
+        return input;
     }
 
     getCleanTitle(input) {
