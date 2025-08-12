@@ -6,7 +6,7 @@
         "name":"General",
         "active":true,
         "randomized": {
-            "randomized": false,
+            "active": false,
             "max_prompts": -1,
             "min_prompts": -1
         },
@@ -23,7 +23,7 @@
         "name":"Character",
         "active":true,
         "randomized": {
-            "randomized": true,
+            "active": true,
             "max_prompts": 1,
             "min_prompts": 1
         },
@@ -73,7 +73,7 @@
         "name":"Character Traits",
         "active":true,
         "randomized": {
-            "randomized": true,
+            "active": true,
             "max_prompts": -1,
             "min_prompts": 1
         },
@@ -100,7 +100,7 @@
         "name":"Scenes",
         "active":true,
         "randomized": {
-            "randomized": true,
+            "active": true,
             "max_prompts": 1,
             "min_prompts": 1
         },
@@ -127,7 +127,7 @@
         "name":"Backgrounds",
         "active":true,
         "randomized": {
-            "randomized": true,
+            "active": true,
             "max_prompts": 1,
             "min_prompts": 1
         },
@@ -146,10 +146,36 @@
         ]
     },
     {
+        "name":"Conditional Sky when Outside",
+        "active":true,
+        "conditions": {
+            "active": true,
+            "and_condition": true,
+            "negative": false,
+            "tags": [
+                "outside"
+            ],
+            "categories": []
+        },
+        "randomized": {
+            "active": false,
+            "max_prompts": 1,
+            "min_prompts": 1
+        },
+        "type":"positive",
+        "prompts": [
+            {
+                "name": "Add Sky",
+                "active":true,
+                "prompt": "sky, clouds, sun,"
+            }
+        ]
+    },
+    {
         "name":"Negatives",
         "active":true,
         "randomized": {
-            "randomized": false,
+            "active": false,
             "max_prompts": 1,
             "min_prompts": 1
         },
