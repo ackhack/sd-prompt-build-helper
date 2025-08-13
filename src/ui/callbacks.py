@@ -42,7 +42,7 @@ def editor_ui():
             **js("() => { PbhEditor.load(); }"),
         )
 
-    return [(TAGS_EDITOR, "PBH Editor", "sd-webui-pbh-editor")]
+    return [(TAGS_EDITOR, "PBH Editor", "pbh-editor")]
 
 
 def load() -> str:
