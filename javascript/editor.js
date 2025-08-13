@@ -38,7 +38,7 @@ class Config {
 
 class PromptCategory {
     name = "";
-    type = "positive";
+    type = "";
     active = true;
     conditions = new CategoryCondition()
     randomized = new CategoryRandomization()
@@ -448,6 +448,9 @@ class ConfigEditor {
         this.applyStyles(label, {marginTop: "8px", fontWeight: "bold", display: "flex", alignItems: "center"});
         let input;
         if (obj.constructor.name === "PromptCategory" && key === "type") {
+            if (obj[key] == ""){
+                obj[key] = "positive";
+            }
             input = this.renderTypeField(obj, key);
         } else {
             input = this.getInputForProperty(obj, key);
