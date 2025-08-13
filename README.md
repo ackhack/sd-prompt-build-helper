@@ -1,14 +1,19 @@
 # Prompt Build Helper
 
+### General
+
 Simple extension for [SD.Next](https://github.com/vladmandic/sdnext/) to help building and randomizing prompts.
 It will internally overwrite the positive and negative prompt, by building a custom one given by the parameters.
 It will generate the same prompt when using a batch size higher than 1, but when using the generate forever feature it will generate a new prompt for every image.
 
-This was created to handle a tag like prompting style which is used for generating anime pictures, the tags should be divided by a comma `,`.
-It will remove any duplicate tags and cleanup up the prompt, it will not change the order of the tags.
+### Extension files
 
 A log of all prompts will be saved in the data dir under `extensions\prompt-build-helper\log.log`.
 The config is also saved there under `extensions\prompt-build-helper\config.json`.
+
+### Gallery
+
+The extension saves all images based on their prompts and categories under `extensions\prompt-build-helper\gallery`. These are hard links so they don't take extra space on the disk and link to the original image created (which is normally in the `outputs` folder). You can view this gallery using the builtin gallery tab that should be near the PBH tab.
 
 ## Usage
 
@@ -22,6 +27,8 @@ The config is also saved there under `extensions\prompt-build-helper\config.json
 5. Profit.
  
 ## Intention
+This was created to handle a tag like prompting style which is used for generating anime pictures, the tags should be divided by a comma `,`.
+It will remove any duplicate tags and cleanup up the prompt, it will not change the order of the tags.
 
 ### Randomization
 Is to be used to generate images with set variances randomly.
