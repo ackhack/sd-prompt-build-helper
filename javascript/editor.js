@@ -38,7 +38,7 @@ class Config {
 
 class PromptCategory {
     name = "";
-    type = "";
+    type = "positive";
     active = true;
     conditions = new CategoryCondition()
     randomized = new CategoryRandomization()
