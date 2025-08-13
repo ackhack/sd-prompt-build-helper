@@ -210,6 +210,35 @@ class ConfigEditor {
     renderArray(obj, key, container) {
         const {wrapper, header, toggleBtn, content} = this.createHtmlContent(obj, key);
 
+        const ctor = this.getArrayItemConstructor(obj, key);
+        const ref = new ctor();
+        if (typeof ref === "object" && "active" in ref) {
+            let toggleAllItemsButton = document.createElement("input");
+            toggleAllItemsButton.type = "checkbox";
+            toggleAllItemsButton.title = "Toggle All";
+            this.applyStyles(toggleAllItemsButton, {
+                marginLeft: "6px"
+            })
+            header.insertBefore(toggleAllItemsButton, header.lastChild);
+
+            toggleAllItemsButton.checked = true;
+            for (const arrayItem of obj[key]) {
+                if ("active" in arrayItem && !arrayItem.active) {
+                    toggleAllItemsButton.checked = false;
+                    break;
+                }
+            }
+
+            toggleAllItemsButton.addEventListener("change", () => {
+                for (const arrayItem of obj[key]) {
+                    if ("active" in arrayItem) {
+                        arrayItem.active = toggleAllItemsButton.checked;
+                    }
+                }
+                this.renderArrayItems(obj[key], content);
+            });
+        }
+
         // Add button is outside content, so won't be removed during re-rendering items
         const addBtn = document.createElement("button");
         addBtn.textContent = "Add " + key.slice(0, -1);
@@ -223,7 +252,6 @@ class ConfigEditor {
         this.renderArrayItems(obj[key], content);
 
         addBtn.onclick = () => {
-            const ctor = this.getArrayItemConstructor(obj, key);
             obj[key].push(new ctor());
             this.renderArrayItems(obj[key], content);
         };
