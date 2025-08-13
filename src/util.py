@@ -33,3 +33,10 @@ log_file = pbh_get_data_dir() + "/log.log"
 
 def pbh_get_log_file_path() -> str:
     return log_file
+
+gallery_folder = data_dir + "/gallery"
+
+def pbh_get_gallery_folder() -> str:
+    if not os.path.isdir(gallery_folder):
+        os.makedirs(gallery_folder)
+    return gallery_folder

@@ -6,6 +6,7 @@ class FinalPromptBuilder:
 
     def __init__(self):
         self.tag_collection: list[str] = []
+        self.prompt_collection: list[str] = []
         self.category_collection: list[str] = []
 
     def pbh_add_category(self, category: PromptCategory):
@@ -17,13 +18,14 @@ class FinalPromptBuilder:
         if not prompt.active:
             pbh_log_debug(prompt.name + ": Not active")
             return
-        self.pbh_add_string(prompt.prompt)
+        self.prompt_collection.append(prompt.name)
+        self.__pbh_add_string(prompt.prompt)
         for lora in prompt.loras:
             pbh_log_debug(prompt.name + ": Checking LoRA for " + lora.base_model_type)
             if lora.base_model_type == base_model:
-                self.pbh_add_string(lora.name)
+                self.__pbh_add_string(lora.name)
 
-    def pbh_add_string(self, content: str | None):
+    def __pbh_add_string(self, content: str | None):
         if content is None or len(content) == 0:
             return
         pbh_log_debug("Adding string " + content)
@@ -39,6 +41,9 @@ class FinalPromptBuilder:
 
     def pbh_get_current_tags(self) -> list[str]:
         return self.tag_collection
+
+    def pbh_get_current_prompts(self) -> list[str]:
+        return self.prompt_collection
 
     def pbh_get_current_category_names(self) -> list[str]:
         return self.category_collection

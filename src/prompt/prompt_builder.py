@@ -6,6 +6,8 @@ from .models.category_condition import CategoryCondition
 from .final_prompt_builder import FinalPromptBuilder
 from ..log_helper import pbh_log_debug
 from random import randint, choices
+from modules.processing_class import StableDiffusionProcessing
+from .gallery_saver import pbh_get_gallery_saver
 
 
 class PromptBuilder:
@@ -14,15 +16,16 @@ class PromptBuilder:
         self.config_manger: ConfigManager = pbh_get_config_manager()
 
     # Generate a prompts using the current config
-    def pbh_generate_prompts(self):
+    def pbh_generate_prompts(self, param: StableDiffusionProcessing):
         config = self.config_manger.pbh_get_config()
         if config is None or not config.active:
             pbh_log_debug("Failed to get config or not active, not doing anything")
             return None
-        return (self.__pbh_generate_prompt_from_config(config, "positive"),
-                self.__pbh_generate_prompt_from_config(config, "negative"))
+        return (self.__pbh_generate_prompt_from_config(config, "positive", param),
+                self.__pbh_generate_prompt_from_config(config, "negative", param))
 
-    def __pbh_generate_prompt_from_config(self, config: Config, prompt_type: str) -> str:
+    def __pbh_generate_prompt_from_config(self, config: Config, prompt_type: str,
+                                          param: StableDiffusionProcessing) -> str:
         final_prompt = FinalPromptBuilder()
         pbh_log_debug("Starting " + prompt_type + " prompt")
 
@@ -53,6 +56,7 @@ class PromptBuilder:
                 for prompt in active_prompts:
                     final_prompt.pbh_add_prompt(prompt, config.base_model)
 
+        pbh_get_gallery_saver().pbh_add_prompt(final_prompt, prompt_type, param)
         return final_prompt.pbh_get()
 
     def __is_category_included_by_conditions(self, condition: CategoryCondition, final: FinalPromptBuilder) -> bool:
