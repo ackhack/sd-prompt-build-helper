@@ -418,7 +418,12 @@ class ConfigEditor {
         const label = document.createElement("label");
         label.textContent = this.getCleanTitle(key) + ":";
         this.applyStyles(label, {marginTop: "8px", fontWeight: "bold", display: "flex", alignItems: "center"});
-        let input = this.getInputForProperty(obj, key);
+        let input;
+        if (obj.constructor.name === "PromptCategory" && key === "type") {
+            input = this.renderTypeField(obj, key);
+        } else {
+            input = this.getInputForProperty(obj, key);
+        }
         container.appendChild(label);
         label.appendChild(input);
     }
@@ -464,6 +469,30 @@ class ConfigEditor {
             words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1);
         }
         return words.join(" ");
+    }
+
+    renderTypeField(obj, key) {
+        // Create select element
+        const select = document.createElement('select');
+
+        // Create options
+        ['positive', 'negative'].forEach(val => {
+            const option = document.createElement('option');
+            option.value = val;
+            option.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+            select.appendChild(option);
+            if (obj[key] === val) {
+                select.selectedIndex = select.children.length - 1;
+            }
+        });
+
+
+        // Change handler
+        select.addEventListener('change', () => {
+            obj[key] = select.value;
+        });
+
+        return select;
     }
 
     refreshEditor(configObject) {
