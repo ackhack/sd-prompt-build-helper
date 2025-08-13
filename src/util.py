@@ -1,5 +1,5 @@
 import os.path
-
+import re
 from modules.scripts import basedir
 from modules.paths import extensions_dir
 
@@ -40,3 +40,20 @@ def pbh_get_gallery_folder() -> str:
     if not os.path.isdir(gallery_folder):
         os.makedirs(gallery_folder)
     return gallery_folder
+
+
+def sanitize_folder_name(name: str, replacement="") -> str:
+    """
+    Sanitize a string to be safe as a folder name.
+
+    - Replaces invalid characters with `replacement`.
+    - Strips trailing spaces/dots (Windows limitation).
+    """
+    # Windows forbidden characters: <>:"/\|?*
+    # Remove control characters (ASCII < 32)
+    sanitized = re.sub(r'[<>:"/\\|?*\x00-\x1F]', replacement, name)
+
+    # Remove trailing spaces or dots (Windows limitation)
+    sanitized = sanitized.rstrip(' .')
+
+    return sanitized

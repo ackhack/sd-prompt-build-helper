@@ -2,7 +2,7 @@ import os.path
 
 from .final_prompt_builder import FinalPromptBuilder
 from modules.processing_class import StableDiffusionProcessing
-from ..util import pbh_get_gallery_folder
+from ..util import pbh_get_gallery_folder, sanitize_folder_name
 
 
 class ImageInfo:
@@ -32,22 +32,22 @@ class GallerySaver:
         prompt_gallery = gallery + "/prompts/"
 
         for prompt in info.prompt_builder.pbh_get_current_prompts():
-            path = prompt_gallery + prompt
+            path = prompt_gallery + sanitize_folder_name(prompt)
             if not os.path.isdir(path):
                 os.makedirs(path)
             file = path + "/" + os.path.basename(image)
             if not os.path.isfile(file):
-                os.link(image, path + "/" + os.path.basename(image))
+                os.link(image, file)
 
         category_gallery = gallery + "/categories/"
 
         for category in info.prompt_builder.pbh_get_current_category_names():
-            path = category_gallery + category
+            path = category_gallery + sanitize_folder_name(category)
             if not os.path.isdir(path):
                 os.makedirs(path)
             file = path + "/" + os.path.basename(image)
             if not os.path.isfile(file):
-                os.link(image, path + "/" + os.path.basename(image))
+                os.link(image, file)
 
 
 instance = GallerySaver()
